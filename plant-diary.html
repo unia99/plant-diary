@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="식물일기">
+<title>식물일기</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2d6a4f;
+    --green-light: #b7e4c7;
+    --green-pale: #f0faf4;
+    --mint: #74c69d;
+    --yellow: #f4a261;
+    --yellow-pale: #fff8f0;
+    --text: #1b1b1b;
+    --text-muted: #6b7280;
+    --text-hint: #9ca3af;
+    --border: #e5e7eb;
+    --bg: #f9fafb;
+    --card: #ffffff;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-title {
+    font-family: 'Gowun Dodum', serif;
+    font-size: 22px;
+    color: var(--green);
+    letter-spacing: -0.3px;
+  }
+  .header-sub {
+    font-size: 12px;
+    color: var(--text-hint);
+    margin-top: 2px;
+  }
+  .tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px 0;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .2s;
+    text-align: center;
+  }
+  .tab.on {
+    border-color: var(--green);
+    background: var(--green-pale);
+    color: var(--green);
+    font-weight: 500;
+  }
+  .tab.on.pine { border-color: var(--yellow); background: var(--yellow-pale); color: #b45309; }
+  main { padding: 16px 20px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-hint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+  }
+  .action-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .action-btn {
+    flex: 1;
+    padding: 12px 8px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .action-btn svg { width: 16px; height: 16px; }
+  .action-btn.w { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+  .action-btn.f { background: #f0fdf4; border-color: #86efac; color: #15803d; }
+  .photo-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    text-align: center;
+    color: var(--text-hint);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .photo-zone:active { background: var(--bg); }
+  .photo-zone svg { display: block; margin: 0 auto 6px; opacity: .5; }
+  .photo-preview {
+    width: 100%;
+    border-radius: var(--radius-sm);
+    max-height: 200px;
+    object-fit: cover;
+    display: none;
+    margin-bottom: 12px;
+  }
+  textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    resize: none;
+    height: 80px;
+    outline: none;
+    transition: border-color .2s;
+    margin-bottom: 12px;
+  }
+  textarea:focus { border-color: var(--mint); background: #fff; }
+  .save-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--green);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: -0.2px;
+  }
+  .save-btn:active { background: #1b4d38; transform: scale(0.98); }
+  .save-btn.pine { background: #d97706; }
+  .save-btn.pine:active { background: #b45309; }
+  .toast {
+    text-align: center;
+    font-size: 13px;
+    color: var(--green);
+    height: 24px;
+    margin-top: 8px;
+    transition: opacity .3s;
+  }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat {
+    background: var(--green-pale);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+  }
+  .stat.pine-stat { background: var(--yellow-pale); }
+  .stat-num { font-size: 26px; font-weight: 500; color: var(--green); }
+  .stat-num.pine-num { color: #b45309; }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .log-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-time { min-width: 56px; }
+  .log-date-txt { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .log-time-txt { font-size: 11px; color: var(--text-hint); margin-top: 1px; }
+  .log-body { flex: 1; }
+  .badges { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+  .badge {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .bw { background: #dbeafe; color: #1d4ed8; }
+  .bf { background: #dcfce7; color: #15803d; }
+  .log-memo { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .log-photo { width: 100%; border-radius: 8px; max-height: 120px; object-fit: cover; margin-bottom: 6px; }
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--border);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color .2s;
+    flex-shrink: 0;
+  }
+  .del-btn:active { color: #ef4444; }
+  .empty {
+    text-align: center;
+    color: var(--text-hint);
+    font-size: 14px;
+    padding: 24px 0;
+    line-height: 1.8;
+  }
+  .empty-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">🌿 식물일기</div>
+  <div class="header-sub">기록이 이 기기에 자동 저장돼요</div>
+</header>
+
+<div class="tabs">
+  <button class="tab on" id="tab-mint" onclick="sw('mint')">🌿 애플민트</button>
+  <button class="tab" id="tab-pine" onclick="sw('pineapple')">🍍 파인애플</button>
+</div>
+
+<main>
+  <div class="card">
+    <p class="section-label">오늘 기록</p>
+    <div class="action-row">
+      <button class="action-btn" id="bw" onclick="togW()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C6 8 4 12 4 15a8 8 0 0016 0c0-3-2-7-8-13z"/></svg>
+        물 줬어요
+      </button>
+      <button class="action-btn" id="bf" onclick="togF()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 8C8 10 5.9 16.17 3.82 19.5M9.5 9.5C9.5 13 7 16 4 18M15 7c0 4 2 7 6 9"/></svg>
+        영양제 줬어요
+      </button>
+    </div>
+
+    <div class="photo-zone" id="pz" onclick="document.getElementById('fi').click()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      사진 추가
+    </div>
+    <input type="file" id="fi" accept="image/*" style="display:none" onchange="onPhoto(event)">
+    <img id="pv" class="photo-preview">
+
+    <textarea id="memo" placeholder="오늘 상태 메모..."></textarea>
+    <button class="save-btn" id="sbtn" onclick="save()">저장하기</button>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <div class="card" id="sc" style="display:none">
+    <p class="section-label">기록 요약</p>
+    <div class="stats-grid">
+      <div class="stat" id="sw-card"><div class="stat-num" id="wc">0</div><div class="stat-label">물 준 횟수</div></div>
+      <div class="stat" id="sf-card"><div class="stat-num" id="fc">0</div><div class="stat-label">영양제 횟수</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="section-label">기록</p>
+    <div id="ll"></div>
+  </div>
+</main>
+
+<script>
+let cur='mint', wt=false, ft=false, ph=null;
+
+function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]'); }catch(e){ return []; } }
+function store(k,d){ try{ localStorage.setItem(k, JSON.stringify(d)); }catch(e){} }
+
+function sw(p){
+  cur=p; wt=false; ft=false; ph=null;
+  const isMint = p==='mint';
+  document.getElementById('tab-mint').className = 'tab' + (isMint?' on':'');
+  document.getElementById('tab-pine').className = 'tab' + (!isMint?' on pine':'');
+  document.getElementById('bw').className='action-btn';
+  document.getElementById('bf').className='action-btn';
+  document.getElementById('pv').style.display='none';
+  document.getElementById('pz').style.display='';
+  document.getElementById('memo').value='';
+  document.getElementById('fi').value='';
+  document.getElementById('toast').textContent='';
+  const sb = document.getElementById('sbtn');
+  sb.className = 'save-btn' + (isMint?'':' pine');
+  render();
+}
+
+function togW(){ wt=!wt; document.getElementById('bw').className='action-btn'+(wt?' w':''); }
+function togF(){ ft=!ft; document.getElementById('bf').className='action-btn'+(ft?' f':''); }
+
+function onPhoto(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    ph=ev.target.result;
+    const pv=document.getElementById('pv');
+    pv.src=ph; pv.style.display='block';
+    document.getElementById('pz').style.display='none';
+  };
+  r.readAsDataURL(f);
+}
+
+function ts(){
+  const d=new Date();
+  const date=`${d.getMonth()+1}/${d.getDate()}`;
+  const time=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return {date, time};
+}
+
+function save(){
+  const memo=document.getElementById('memo').value.trim();
+  if(!wt&&!ft&&!memo&&!ph) return;
+  const {date,time}=ts();
+  const logs=load('plant_'+cur);
+  logs.unshift({id:Date.now(), date, time, water:wt, fert:ft, memo, photo:ph});
+  store('plant_'+cur, logs);
+  wt=false; ft=false; ph=null;
+  document.getElementById('bw').className='action-btn';
+  document.getElementById('bf').className='action-btn';
+  document.getElementById('memo').value='';
+  document.getElementById('pv').style.display='none';
+  document.getElementById('pz').style.display='';
+  document.getElementById('fi').value='';
+  const t=document.getElementById('toast');
+  t.textContent='저장됐어요 ✓';
+  setTimeout(()=>t.textContent='', 2000);
+  render();
+}
+
+function del(id){
+  if(!confirm('이 기록을 삭제할까요?')) return;
+  store('plant_'+cur, load('plant_'+cur).filter(l=>l.id!==id));
+  render();
+}
+
+function render(){
+  const logs=load('plant_'+cur);
+  const isMint=cur==='mint';
+  const sc=document.getElementById('sc');
+  const ll=document.getElementById('ll');
+  document.getElementById('sw-card').className='stat'+(isMint?'':' pine-stat');
+  document.getElementById('sf-card').className='stat'+(isMint?'':' pine-stat');
+  document.getElementById('wc').className='stat-num'+(isMint?'':' pine-num');
+  document.getElementById('fc').className='stat-num'+(isMint?'':' pine-num');
+
+  if(!logs.length){
+    ll.innerHTML=`<div class="empty"><span class="empty-icon">${isMint?'🌿':'🍍'}</span>아직 기록이 없어요<br>오늘 상태를 기록해보세요!</div>`;
+    sc.style.display='none'; return;
+  }
+  sc.style.display='block';
+  document.getElementById('wc').textContent=logs.filter(l=>l.water).length;
+  document.getElementById('fc').textContent=logs.filter(l=>l.fert).length;
+  ll.innerHTML=logs.map(l=>`
+    <div class="log-item">
+      <div class="log-time">
+        <div class="log-date-txt">${l.date}</div>
+        <div class="log-time-txt">${l.time||''}</div>
+      </div>
+      <div class="log-body">
+        <div class="badges">
+          ${l.water?'<span class="badge bw">💧 물</span>':''}
+          ${l.fert?'<span class="badge bf">🌿 영양제</span>':''}
+        </div>
+        ${l.photo?`<img src="${l.photo}" class="log-photo">`:''}
+        ${l.memo?`<p class="log-memo">${l.memo}</p>`:''}
+      </div>
+      <button class="del-btn" onclick="del(${l.id})" aria-label="삭제">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+render();
+</script>
+</body>
+</html>
