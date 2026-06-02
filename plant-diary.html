@@ -286,15 +286,59 @@
 
 <script>
 let cur='mint', wt=false, ft=false, ph=null;
+let db=null;
 
+// ── IndexedDB 초기화 ──────────────────────────────────────────
+function initDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('plant_diary',1);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('photos'))
+        d.createObjectStore('photos');
+    };
+    req.onsuccess=e=>{ db=e.target.result; res(); };
+    req.onerror=()=>rej(req.error);
+  });
+}
+
+function savePhoto(id,data){
+  return new Promise((res,rej)=>{
+    const tx=db.transaction('photos','readwrite');
+    tx.objectStore('photos').put(data,id);
+    tx.oncomplete=res;
+    tx.onerror=()=>rej(tx.error);
+  });
+}
+
+function getPhoto(id){
+  return new Promise((res)=>{
+    const tx=db.transaction('photos','readonly');
+    const req=tx.objectStore('photos').get(id);
+    req.onsuccess=()=>res(req.result||null);
+    req.onerror=()=>res(null);
+  });
+}
+
+function deletePhoto(id){
+  return new Promise((res)=>{
+    const tx=db.transaction('photos','readwrite');
+    tx.objectStore('photos').delete(id);
+    tx.oncomplete=res;
+    tx.onerror=res;
+  });
+}
+
+// ── localStorage (사진 제외) ──────────────────────────────────
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]'); }catch(e){ return []; } }
 function store(k,d){ try{ localStorage.setItem(k, JSON.stringify(d)); }catch(e){} }
 
+// ── UI ────────────────────────────────────────────────────────
 function sw(p){
   cur=p; wt=false; ft=false; ph=null;
-  const isMint = p==='mint';
-  document.getElementById('tab-mint').className = 'tab' + (isMint?' on':'');
-  document.getElementById('tab-pine').className = 'tab' + (!isMint?' on pine':'');
+  const isMint=p==='mint';
+  document.getElementById('tab-mint').className='tab'+(isMint?' on':'');
+  document.getElementById('tab-pine').className='tab'+(!isMint?' on pine':'');
   document.getElementById('bw').className='action-btn';
   document.getElementById('bf').className='action-btn';
   document.getElementById('pv').style.display='none';
@@ -302,8 +346,8 @@ function sw(p){
   document.getElementById('memo').value='';
   document.getElementById('fi').value='';
   document.getElementById('toast').textContent='';
-  const sb = document.getElementById('sbtn');
-  sb.className = 'save-btn' + (isMint?'':' pine');
+  const sb=document.getElementById('sbtn');
+  sb.className='save-btn'+(isMint?'':' pine');
   render();
 }
 
@@ -314,7 +358,7 @@ function onPhoto(e){
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=ev=>{
-    ph=ev.target.result;
+    ph=ev.target.result;               // 임시 메모리 보관
     const pv=document.getElementById('pv');
     pv.src=ph; pv.style.display='block';
     document.getElementById('pz').style.display='none';
@@ -329,33 +373,42 @@ function ts(){
   return {date, time};
 }
 
-function save(){
+async function save(){
   const memo=document.getElementById('memo').value.trim();
   if(!wt&&!ft&&!memo&&!ph) return;
   const {date,time}=ts();
+  const id=Date.now();
+
+  // 사진은 IndexedDB에 저장 (photo 필드엔 id만)
+  if(ph){ await savePhoto(id, ph); }
+
   const logs=load('plant_'+cur);
-  logs.unshift({id:Date.now(), date, time, water:wt, fert:ft, memo, photo:ph});
+  logs.unshift({id, date, time, water:wt, fert:ft, memo, hasPhoto:!!ph});
   store('plant_'+cur, logs);
+
   wt=false; ft=false; ph=null;
   document.getElementById('bw').className='action-btn';
   document.getElementById('bf').className='action-btn';
   document.getElementById('memo').value='';
   document.getElementById('pv').style.display='none';
+  document.getElementById('pv').src='';
   document.getElementById('pz').style.display='';
   document.getElementById('fi').value='';
   const t=document.getElementById('toast');
   t.textContent='저장됐어요 ✓';
-  setTimeout(()=>t.textContent='', 2000);
+  setTimeout(()=>t.textContent='',2000);
   render();
 }
 
-function del(id){
+async function del(id){
   if(!confirm('이 기록을 삭제할까요?')) return;
+  await deletePhoto(id);
   store('plant_'+cur, load('plant_'+cur).filter(l=>l.id!==id));
   render();
 }
 
-function render(){
+// ── 기록 렌더 (사진은 IndexedDB에서 비동기 로드) ─────────────
+async function render(){
   const logs=load('plant_'+cur);
   const isMint=cur==='mint';
   const sc=document.getElementById('sc');
@@ -372,8 +425,10 @@ function render(){
   sc.style.display='block';
   document.getElementById('wc').textContent=logs.filter(l=>l.water).length;
   document.getElementById('fc').textContent=logs.filter(l=>l.fert).length;
+
+  // 우선 텍스트로 렌더
   ll.innerHTML=logs.map(l=>`
-    <div class="log-item">
+    <div class="log-item" id="li-${l.id}">
       <div class="log-time">
         <div class="log-date-txt">${l.date}</div>
         <div class="log-time-txt">${l.time||''}</div>
@@ -383,7 +438,7 @@ function render(){
           ${l.water?'<span class="badge bw">💧 물</span>':''}
           ${l.fert?'<span class="badge bf">🌿 영양제</span>':''}
         </div>
-        ${l.photo?`<img src="${l.photo}" class="log-photo">`:''}
+        ${l.hasPhoto?`<img id="photo-${l.id}" class="log-photo" src="" style="display:none">`:''}
         ${l.memo?`<p class="log-memo">${l.memo}</p>`:''}
       </div>
       <button class="del-btn" onclick="del(${l.id})" aria-label="삭제">
@@ -391,9 +446,18 @@ function render(){
       </button>
     </div>
   `).join('');
+
+  // 사진 비동기 로드
+  for(const l of logs){
+    if(!l.hasPhoto) continue;
+    const data=await getPhoto(l.id);
+    const img=document.getElementById('photo-'+l.id);
+    if(img && data){ img.src=data; img.style.display='block'; }
+  }
 }
 
-render();
+// ── 앱 시작 ──────────────────────────────────────────────────
+initDB().then(()=>render()).catch(()=>render());
 </script>
 </body>
 </html>
